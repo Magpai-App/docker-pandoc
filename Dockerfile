@@ -13,7 +13,16 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     && apt-get install -y \
         curl \
         texlive \
+        texlive-luatex \
+        texlive-xetex \
+        texlive-fonts-recommended \
+        texlive-fonts-extra \
+        latexmk \
+        wkhtmltopdf \
+        weasyprint \
         librsvg2-bin \
+    ;
+RUN texhash \
     ;
 
 
@@ -31,5 +40,7 @@ WORKDIR /opt/bin
 COPY server.py /opt/bin/server
 
 WORKDIR /
-ENTRYPOINT [ "/opt/bin/server" ]
-CMD [ "" ]
+COPY entrypoint.sh /entrypoint.sh
+
+ENTRYPOINT [ "/entrypoint.sh" ]
+CMD [ "-H", "0.0.0.0", "-p", "8080" ]
