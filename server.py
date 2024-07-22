@@ -11,6 +11,7 @@ from sys import argv, exit
 from tempfile import TemporaryDirectory
 from threading import Thread
 from typing import Union
+from urllib.request import urlopen
 
 logger = getLogger(__name__)
 
@@ -102,8 +103,25 @@ def create_server(host: str, port: int, token: Union[str, None]) -> ThreadingHTT
                         self.end_headers()
                         return
 
-                    with file_path.open("wb") as file:
-                        file.write(b64decode(file_content))
+                    if file_content is None:
+                        logger.warning(f"Invalid file content: {file_name}")
+                        self.send_response(400)
+                        self.end_headers()
+                        return
+
+                    if file_content.startswith("data:"):
+                        logger.info(f"Decoding {file_name} from data URI...")
+                        with file_path.open("wb") as file, urlopen(file_content) as response:
+                            file.write(response.read())
+                    elif file_content.startswith("http:") or file_content.startswith("https:"):
+                        logger.info(f"Downloading {file_name} from {file_content}...")
+                        with file_path.open("wb") as file, urlopen(file_content) as response:
+                            for chunk in response.iter_content(chunk_size=4 * 1024 * 1024):
+                                file.write(chunk)
+                    else:
+                        logger.info(f"Decoding {file_name} from base64...")
+                        with file_path.open("wb") as file:
+                            file.write(b64decode(file_content))
 
                 with Popen(
                     [
