@@ -116,8 +116,7 @@ def create_server(host: str, port: int, token: Union[str, None]) -> ThreadingHTT
                     elif file_content.startswith("http:") or file_content.startswith("https:"):
                         logger.info(f"Downloading {file_name} from {file_content}...")
                         with file_path.open("wb") as file, urlopen(file_content) as response:
-                            for chunk in response.iter_content(chunk_size=4 * 1024 * 1024):
-                                file.write(chunk)
+                            file.write(response.read())
                     else:
                         logger.info(f"Decoding {file_name} from base64...")
                         with file_path.open("wb") as file:
